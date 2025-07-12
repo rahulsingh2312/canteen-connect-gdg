@@ -34,4 +34,5 @@ export type InventoryItem = {
     name: string;
     stock: number;
     lowStockThreshold: number;
+    lastReorderRequest?: Timestamp;
 };
