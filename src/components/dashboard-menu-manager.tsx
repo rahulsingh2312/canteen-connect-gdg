@@ -34,6 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { MenuItem } from '@/lib/types';
 import { PlusCircle, Edit, Trash2, Utensils, Power, PowerOff, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const menuItemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -70,13 +71,23 @@ export function DashboardMenuManager() {
 
   const fetchMenuItems = async () => {
     setIsLoading(true);
-    const querySnapshot = await getDocs(collection(db, 'menuItems'));
-    const items: MenuItem[] = [];
-    querySnapshot.forEach((doc) => {
-      items.push({ id: doc.id, ...doc.data() } as MenuItem);
-    });
-    setMenuItems(items.sort((a,b) => a.name.localeCompare(b.name)));
-    setIsLoading(false);
+    try {
+      const querySnapshot = await getDocs(collection(db, 'menuItems'));
+      const items: MenuItem[] = [];
+      querySnapshot.forEach((doc) => {
+        items.push({ id: doc.id, ...doc.data() } as MenuItem);
+      });
+      setMenuItems(items.sort((a,b) => a.name.localeCompare(b.name)));
+    } catch (error) {
+      console.error("Error fetching menu items: ", error);
+      toast({
+        title: "Error",
+        description: "Could not fetch menu items. Ensure Firebase is configured correctly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -132,18 +143,36 @@ export function DashboardMenuManager() {
   };
   
   const togglePause = async (item: MenuItem) => {
-    const docRef = doc(db, 'menuItems', item.id);
-    await updateDoc(docRef, { isPaused: !item.isPaused });
-    toast({ title: 'Success', description: `${item.name} has been ${item.isPaused ? 'resumed' : 'paused'}.` });
-    fetchMenuItems();
+    try {
+      const docRef = doc(db, 'menuItems', item.id);
+      await updateDoc(docRef, { isPaused: !item.isPaused });
+      toast({ title: 'Success', description: `${item.name} has been ${item.isPaused ? 'resumed' : 'paused'}.` });
+      fetchMenuItems();
+    } catch (error) {
+       console.error('Error toggling pause state:', error);
+       toast({
+        title: 'Error',
+        description: 'Could not update item status.',
+        variant: 'destructive',
+      });
+    }
   };
   
   const deleteItem = async (id: string) => {
     if(confirm('Are you sure you want to delete this item?')) {
-        const docRef = doc(db, 'menuItems', id);
-        await deleteDoc(docRef);
-        toast({ title: 'Success', description: 'Item deleted.' });
-        fetchMenuItems();
+        try {
+            const docRef = doc(db, 'menuItems', id);
+            await deleteDoc(docRef);
+            toast({ title: 'Success', description: 'Item deleted.' });
+            fetchMenuItems();
+        } catch (error) {
+            console.error('Error deleting item:', error);
+            toast({
+                title: 'Error',
+                description: 'Could not delete item.',
+                variant: 'destructive',
+            });
+        }
     }
   };
 
@@ -338,7 +367,7 @@ export function DashboardMenuManager() {
                 </TableRow>
               ))
             ) : (
-                <TableRow><TableCell colSpan={5} className="text-center h-24">No menu items found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center h-24">No menu items found. Add one to get started!</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
