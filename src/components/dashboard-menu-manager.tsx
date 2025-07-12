@@ -1,41 +1,26 @@
-
 'use client';
+
 import { useState, useEffect } from 'react';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import { Switch } from './ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import type { MenuItem } from '@/lib/types';
-import { generateImageUrl } from '@/lib/utils';
-import { PlusCircle, Edit, Trash2, Utensils, Power, PowerOff, Loader2, Image as ImageIcon } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Utensils, Power, PowerOff, Loader2, Image as ImageIcon, Upload, Zap, Beef } from 'lucide-react';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { MenuItem } from '@/lib/types';
+import { uploadImageToR2, validateImageFile } from '@/lib/utils';
 
 const menuItemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -43,6 +28,8 @@ const menuItemSchema = z.object({
   price: z.coerce.number().min(0, 'Price must be positive'),
   category: z.string().min(1, 'Category is required'),
   dataAiHint: z.string().min(1, 'AI Hint is required'),
+  calories: z.coerce.number().min(0, 'Calories must be positive'),
+  protein: z.coerce.number().min(0, 'Protein must be positive'),
   isOnSale: z.boolean().default(false),
   isPaused: z.boolean().default(false),
 });
@@ -67,105 +54,42 @@ export function DashboardMenuManager() {
       price: 100,
       category: 'Main Course',
       dataAiHint: 'food item',
+      calories: 200,
+      protein: 10,
       isOnSale: false,
       isPaused: false,
     },
   });
 
-  // Function to generate image based on form data
-  const generateImage = async (prompt: string) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!validateImageFile(file)) {
+      toast({
+        title: 'Invalid file',
+        description: 'Please select a valid image file (JPEG, PNG, WebP) under 5MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsGeneratingImage(true);
     try {
-      // Get the current form values to create a better search query
-      const formValues = form.getValues();
-      const searchQuery = (formValues.name || formValues.dataAiHint || prompt).toLowerCase();
-      
-      // Curated image mapping based on food keywords
-      const imageMapping: { [key: string]: string } = {
-        // Indian dishes
-        'chole': 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&h=400&fit=crop&crop=center',
-        'bhature': 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&h=400&fit=crop&crop=center',
-        'dosa': 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&h=400&fit=crop&crop=center',
-        'samosa': 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&h=400&fit=crop&crop=center',
-        'paneer': 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&h=400&fit=crop&crop=center',
-        'tikka': 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&h=400&fit=crop&crop=center',
-        'chai': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600&h=400&fit=crop&crop=center',
-        'tea': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600&h=400&fit=crop&crop=center',
-        
-        // General food categories
-        'pizza': 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=600&h=400&fit=crop&crop=center',
-        'burger': 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&h=400&fit=crop&crop=center',
-        'pasta': 'https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=600&h=400&fit=crop&crop=center',
-        'salad': 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop&crop=center',
-        'soup': 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&h=400&fit=crop&crop=center',
-        'rice': 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&h=400&fit=crop&crop=center',
-        'bread': 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&h=400&fit=crop&crop=center',
-        'cake': 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&h=400&fit=crop&crop=center',
-        'dessert': 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&h=400&fit=crop&crop=center',
-        'coffee': 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&h=400&fit=crop&crop=center',
-        'juice': 'https://images.unsplash.com/photo-1622597489632-0c2f5e1c0c2c?w=600&h=400&fit=crop&crop=center',
-        'smoothie': 'https://images.unsplash.com/photo-1622597489632-0c2f5e1c0c2c?w=600&h=400&fit=crop&crop=center',
-      };
-      
-      // Find matching image based on keywords
-      let selectedImage = '';
-      for (const [keyword, imageUrl] of Object.entries(imageMapping)) {
-        if (searchQuery.includes(keyword)) {
-          selectedImage = imageUrl;
-          break;
-        }
-      }
-      
-      // If no specific match found, use category-based fallback
-      if (!selectedImage) {
-        const formValues = form.getValues();
-        const category = formValues.category?.toLowerCase() || '';
-        
-        const categoryImages: { [key: string]: string } = {
-          'main course': 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&h=400&fit=crop&crop=center',
-          'starters': 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&h=400&fit=crop&crop=center',
-          'snacks': 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&h=400&fit=crop&crop=center',
-          'beverages': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600&h=400&fit=crop&crop=center',
-          'desserts': 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&h=400&fit=crop&crop=center',
-        };
-        
-        selectedImage = categoryImages[category] || 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&h=400&fit=crop&crop=center';
-      }
-      
-      setGeneratedImageUrl(selectedImage);
-      toast({ title: 'Success', description: 'Perfect image found for your dish!' });
+      const imageUrl = await uploadImageToR2(file);
+      setGeneratedImageUrl(imageUrl);
+      toast({ title: 'Success', description: 'Image uploaded successfully!' });
     } catch (error) {
-      console.error('Error generating image:', error);
-      // Fallback to demo images
-      const demoImages = [
-        'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&h=400&fit=crop&crop=center',
-        'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&h=400&fit=crop&crop=center',
-        'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&h=400&fit=crop&crop=center',
-        'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600&h=400&fit=crop&crop=center',
-        'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=600&h=400&fit=crop&crop=center',
-      ];
-      const randomImage = demoImages[Math.floor(Math.random() * demoImages.length)];
-      setGeneratedImageUrl(randomImage);
+      console.error('Error uploading image:', error);
       toast({
-        title: 'Error',
-        description: 'Could not find specific image. Using demo image instead.',
+        title: 'Upload failed',
+        description: 'Could not upload image. Please try again.',
         variant: 'destructive',
       });
     } finally {
       setIsGeneratingImage(false);
     }
   };
-
-  // Watch for changes in dataAiHint to auto-generate image
-  const aiHint = form.watch('dataAiHint');
-  useEffect(() => {
-    if (aiHint && aiHint.length > 3 && !editingItem) {
-      const timeoutId = setTimeout(() => {
-        generateImage(aiHint);
-      }, 1000); // Debounce for 1 second
-      return () => clearTimeout(timeoutId);
-    }
-  }, [aiHint, editingItem]);
 
   const fetchMenuItems = async () => {
     setIsLoading(true);
@@ -201,6 +125,8 @@ export function DashboardMenuManager() {
       price: item.price,
       category: item.category,
       dataAiHint: item.dataAiHint,
+      calories: item.nutrition?.calories || 200,
+      protein: item.nutrition?.protein || 10,
       isOnSale: item.isOnSale,
       isPaused: item.isPaused,
     });
@@ -217,15 +143,21 @@ export function DashboardMenuManager() {
   const onSubmit = async (data: MenuItemFormValues) => {
     setIsSubmitting(true);
     try {
+      const menuItemData = {
+        ...data,
+        image: generatedImageUrl || (editingItem?.image || `https://placehold.co/600x400.png`),
+        nutrition: {
+          calories: data.calories,
+          protein: data.protein,
+        },
+      };
+
       if (editingItem) {
         const docRef = doc(db, 'menuItems', editingItem.id);
-        await updateDoc(docRef, {...data, image: generatedImageUrl || editingItem.image}); // Use new image if generated
+        await updateDoc(docRef, menuItemData);
         toast({ title: 'Success', description: 'Menu item updated.' });
       } else {
-        await addDoc(collection(db, 'menuItems'), {
-          ...data,
-          image: generatedImageUrl || `https://placehold.co/600x400.png`, // Use generated image or placeholder
-        });
+        await addDoc(collection(db, 'menuItems'), menuItemData);
         toast({ title: 'Success', description: 'New menu item added.' });
       }
       fetchMenuItems();
@@ -282,8 +214,7 @@ export function DashboardMenuManager() {
         <div>
             <CardTitle className="font-headline flex items-center gap-2">
                 <Utensils />
-                Menu 
-                
+                Menu Manager
             </CardTitle>
             <CardDescription>Add, edit, and manage your canteen's menu items.</CardDescription>
         </div>
@@ -293,13 +224,13 @@ export function DashboardMenuManager() {
               <PlusCircle className="mr-2 h-4 w-4" /> Add Item
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingItem ? 'Edit' : 'Add'} Menu Item</DialogTitle>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                 <FormField
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+                <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
@@ -312,7 +243,7 @@ export function DashboardMenuManager() {
                     </FormItem>
                   )}
                 />
-                 <FormField
+                <FormField
                   control={form.control}
                   name="description"
                   render={({ field }) => (
@@ -330,7 +261,7 @@ export function DashboardMenuManager() {
                   name="price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Price (Rs. )</FormLabel>
+                      <FormLabel>Price (Rs.)</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="e.g., 15" {...field} />
                       </FormControl>
@@ -338,7 +269,7 @@ export function DashboardMenuManager() {
                     </FormItem>
                   )}
                 />
-                 <FormField
+                <FormField
                   control={form.control}
                   name="category"
                   render={({ field }) => (
@@ -351,28 +282,68 @@ export function DashboardMenuManager() {
                     </FormItem>
                   )}
                 />
-                 <FormField
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="calories"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Calories</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 200" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="protein"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Protein (g)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g., 10" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
                   control={form.control}
                   name="dataAiHint"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Image AI Hint</FormLabel>
-                       <FormControl>
-                        <div className="flex gap-2">
-                          <Input placeholder="e.g., indian samosa" {...field} />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => generateImage(field.value)}
-                            disabled={isGeneratingImage || !field.value}
-                          >
-                            {isGeneratingImage ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <ImageIcon className="h-4 w-4" />
-                            )}
-                          </Button>
+                      <FormLabel>Image Upload</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <Input placeholder="e.g., indian samosa" {...field} />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => document.getElementById('image-upload')?.click()}
+                              disabled={isGeneratingImage}
+                            >
+                              {isGeneratingImage ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Upload className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                          <input
+                            id="image-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Click the upload button to select an image (JPEG, PNG, WebP, max 5MB)
+                          </p>
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -381,8 +352,8 @@ export function DashboardMenuManager() {
                 />
                 {generatedImageUrl && (
                   <div className="space-y-2">
-                    <Label>Generated Image Preview</Label>
-                    <div className="relative w-full h-48 border rounded-md overflow-hidden">
+                    <Label>Image Preview</Label>
+                    <div className="relative w-full h-32 border rounded-md overflow-hidden">
                       <Image
                         src={generatedImageUrl}
                         alt="Generated preview"
@@ -393,14 +364,14 @@ export function DashboardMenuManager() {
                     </div>
                   </div>
                 )}
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
                   <FormField
                     control={form.control}
                     name="isOnSale"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm flex-1">
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-2 shadow-sm flex-1">
                         <div className="space-y-0.5">
-                          <FormLabel>On Sale</FormLabel>
+                          <FormLabel className="text-sm">On Sale</FormLabel>
                         </div>
                         <FormControl>
                           <Switch
@@ -415,9 +386,9 @@ export function DashboardMenuManager() {
                     control={form.control}
                     name="isPaused"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm flex-1">
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-2 shadow-sm flex-1">
                         <div className="space-y-0.5">
-                          <FormLabel>Paused</FormLabel>
+                          <FormLabel className="text-sm">Paused</FormLabel>
                         </div>
                         <FormControl>
                           <Switch
@@ -429,10 +400,10 @@ export function DashboardMenuManager() {
                     )}
                   />
                 </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant="secondary">Cancel</Button>
-                  </DialogClose>
+                <DialogFooter className="sticky bottom-0 bg-background pt-4 border-t">
+                  <Button type="button" variant="secondary" onClick={() => setIsDialogOpen(false)}>
+                    Cancel
+                  </Button>
                   <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save
@@ -450,6 +421,7 @@ export function DashboardMenuManager() {
               <TableHead>Item</TableHead>
               <TableHead>Category</TableHead>
               <TableHead className="text-right">Price</TableHead>
+              <TableHead className="text-center">Nutrition</TableHead>
               <TableHead className="text-center">Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -461,6 +433,7 @@ export function DashboardMenuManager() {
                         <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                         <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
+                        <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
                         <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
                          <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
                     </TableRow>
@@ -488,6 +461,22 @@ export function DashboardMenuManager() {
                   <TableCell>{item.category}</TableCell>
                   <TableCell className="text-right">Rs. {item.price.toFixed(2)}</TableCell>
                   <TableCell className="text-center">
+                    {item.nutrition ? (
+                      <div className="flex items-center justify-center gap-2 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Zap className="h-3 w-3 text-yellow-600" />
+                          <span>{item.nutrition.calories}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Beef className="h-3 w-3 text-red-600" />
+                          <span>{item.nutrition.protein}g</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
                     {item.isPaused ? (
                         <span className="text-destructive font-semibold">Paused</span>
                     ) : (
@@ -508,11 +497,11 @@ export function DashboardMenuManager() {
                 </TableRow>
               ))
             ) : (
-                <TableRow><TableCell colSpan={5} className="text-center h-24">No menu items found. Add one to get started!</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center h-24">No menu items found. Add one to get started!</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
       </CardContent>
     </Card>
   );
-}
+} 

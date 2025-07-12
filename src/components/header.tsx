@@ -55,7 +55,7 @@ export function Header() {
                                     <Link href="/">Menu</Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
-                                    <Link href="/sales">On Sale</Link>
+                                    <Link href="/sales" className="font-semibold text-red-600">On Sale</Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
@@ -70,7 +70,7 @@ export function Header() {
                     <>
                         <nav className="flex items-center space-x-6 text-sm font-medium">
                             <Link href="/" className="transition-colors hover:text-primary">Menu</Link>
-                            <Link href="/sales" className="transition-colors hover:text-primary">On Sale</Link>
+                            <Link href="/sales" className="transition-colors hover:text-primary font-semibold text-red-600">On Sale</Link>
                         </nav>
                         <div className="flex flex-1 items-center justify-end space-x-4">
                             <Cart>

@@ -11,6 +11,12 @@ export const demoMenuItems: Omit<MenuItem, 'id'>[] = [
     image: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&h=400&fit=crop&crop=center',
     dataAiHint: 'chole bhature indian food delicious authentic',
     isPaused: false,
+    nutrition: {
+      calories: 450,
+      protein: 12,
+      carbs: 65,
+      fat: 18,
+    },
   },
   {
     name: 'Masala Dosa',
@@ -21,6 +27,12 @@ export const demoMenuItems: Omit<MenuItem, 'id'>[] = [
     image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&h=400&fit=crop&crop=center',
     dataAiHint: 'masala dosa crispy indian crepe food',
     isPaused: false,
+    nutrition: {
+      calories: 280,
+      protein: 8,
+      carbs: 45,
+      fat: 6,
+    },
   },
   {
     name: 'Samosa (2 Pcs)',
@@ -31,6 +43,12 @@ export const demoMenuItems: Omit<MenuItem, 'id'>[] = [
     image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&h=400&fit=crop&crop=center',
     dataAiHint: 'indian samosa crispy pastry snack food',
     isPaused: false,
+    nutrition: {
+      calories: 180,
+      protein: 4,
+      carbs: 25,
+      fat: 8,
+    },
   },
   {
     name: 'Paneer Tikka',
@@ -41,6 +59,12 @@ export const demoMenuItems: Omit<MenuItem, 'id'>[] = [
     image: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&h=400&fit=crop&crop=center',
     dataAiHint: 'paneer tikka grilled indian appetizer food',
     isPaused: true,
+    nutrition: {
+      calories: 320,
+      protein: 18,
+      carbs: 8,
+      fat: 24,
+    },
   },
   {
     name: 'Masala Chai',
@@ -51,6 +75,12 @@ export const demoMenuItems: Omit<MenuItem, 'id'>[] = [
     image: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600&h=400&fit=crop&crop=center',
     dataAiHint: 'masala chai indian tea aromatic beverage',
     isPaused: false,
+    nutrition: {
+      calories: 80,
+      protein: 3,
+      carbs: 12,
+      fat: 2,
+    },
   },
 ];
 

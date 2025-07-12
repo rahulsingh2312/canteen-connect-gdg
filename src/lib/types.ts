@@ -11,6 +11,12 @@ export interface MenuItem {
   isOnSale: boolean;
   dataAiHint: string;
   isPaused: boolean;
+  nutrition?: {
+    calories: number;
+    protein: number;
+    carbs?: number;
+    fat?: number;
+  };
 }
 
 export interface CartItem extends MenuItem {
@@ -27,6 +33,12 @@ export type Order = {
   customerName: string;
   paymentId: string;
   createdAt: Timestamp;
+  nutrition?: {
+    totalCalories: number;
+    totalProtein: number;
+    totalCarbs?: number;
+    totalFat?: number;
+  };
 };
 
 export type InventoryItem = {

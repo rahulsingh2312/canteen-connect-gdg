@@ -5,10 +5,11 @@ import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
 import { demoMenuItems, demoInventoryItems } from '@/lib/data';
+import { seedSalesData, seedInventoryData } from '@/lib/seed-sales-data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Rocket, Loader2 } from 'lucide-react';
+import { RotateCcw, Loader2 } from 'lucide-react';
 
 export function DatabaseSeeder() {
   const [isDataPresent, setIsDataPresent] = useState(true);
@@ -33,17 +34,31 @@ export function DatabaseSeeder() {
   const handleSeedDatabase = async () => {
     setIsSeeding(true);
     try {
-      const batch = writeBatch(db);
-
-      // Seed Menu Items
+      // First, clear existing data
       const menuItemsCollection = collection(db, 'menuItems');
+      const inventoryCollection = collection(db, 'inventory');
+      
+      const menuSnapshot = await getDocs(menuItemsCollection);
+      const inventorySnapshot = await getDocs(inventoryCollection);
+      
+      const batch = writeBatch(db);
+      
+      // Delete existing menu items
+      menuSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      
+      // Delete existing inventory items
+      inventorySnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      
+      // Add new demo data
       demoMenuItems.forEach((item) => {
         const docRef = doc(menuItemsCollection);
         batch.set(docRef, item);
       });
 
-      // Seed Inventory Items
-      const inventoryCollection = collection(db, 'inventory');
       demoInventoryItems.forEach((item) => {
         const docRef = doc(inventoryCollection);
         batch.set(docRef, item);
@@ -51,44 +66,45 @@ export function DatabaseSeeder() {
 
       await batch.commit();
 
+      // Seed sales prediction data
+      await seedSalesData();
+      await seedInventoryData();
+
       toast({
-        title: 'Database Seeded!',
-        description: 'Your menu and inventory have been populated with demo data.',
+        title: 'Data Reset Complete!',
+        description: 'Your menu and inventory have been reset with fresh demo data.',
       });
-      setIsDataPresent(true); 
     } catch (error) {
-      console.error('Error seeding database:', error);
+      console.error('Error resetting database:', error);
       toast({
-        title: 'Seeding Failed',
-        description: 'Could not add demo data to the database.',
+        title: 'Reset Failed',
+        description: 'Could not reset the database.',
         variant: 'destructive',
       });
     } finally {
       setIsSeeding(false);
-      // Optional: force a reload to ensure all components refresh their data
+      // Force a reload to ensure all components refresh their data
       window.location.reload();
     }
   };
 
-  if (isDataPresent) {
-    return null; // Don't show anything if data is already there
-  }
+  // Always show the reset button
 
   return (
     <Card className="bg-primary/5 border-primary/20">
       <CardHeader>
         <CardTitle className="font-headline flex items-center gap-2">
-            <Rocket />
-            Welcome to CanteenConnect!
+            <RotateCcw />
+            Reset Menu Data
         </CardTitle>
         <CardDescription>
-          Your database appears to be empty. Click the button below to populate it with some demo menu items and inventory to get started.
+          Click the button below to reset your menu and inventory with fresh demo data. This will replace all existing data.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Button onClick={handleSeedDatabase} disabled={isSeeding}>
-          {isSeeding ? <Loader2 className="animate-spin mr-2" /> : <Rocket className="mr-2" />}
-          {isSeeding ? 'Seeding...' : 'Seed Demo Data'}
+          {isSeeding ? <Loader2 className="animate-spin mr-2" /> : <RotateCcw className="mr-2" />}
+          {isSeeding ? 'Resetting...' : 'Reset Menu Data'}
         </Button>
       </CardContent>
     </Card>

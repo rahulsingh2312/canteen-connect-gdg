@@ -104,11 +104,13 @@ export function DashboardInventory() {
                             )}
                         </TableCell>
                         <TableCell className="text-right">
-                            {isLowStock && (
+                            {isLowStock ? (
                                 <Button size="sm" variant="outline" onClick={() => handleReorder(item)}>
                                     Order More
                                 </Button>
-                            )}
+                            ): <Button size="sm" variant="outline" onClick={() => handleReorder(item)}>
+                            no action needed
+                        </Button>} 
                         </TableCell>
                         </TableRow>
                     );

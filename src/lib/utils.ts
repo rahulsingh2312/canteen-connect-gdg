@@ -6,7 +6,57 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Generates a relevant image URL based on food keywords
+ * Uploads an image to Cloudflare R2 and returns the URL
+ * @param file - The image file to upload
+ * @returns Promise<string> - The URL of the uploaded image
+ */
+export async function uploadImageToR2(file: File): Promise<string> {
+  try {
+    // Create FormData for the upload
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Upload through API route to keep R2 credentials secure
+    const response = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to upload image');
+    }
+    
+    const data = await response.json();
+    return data.url;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw error;
+  }
+}
+
+/**
+ * Validates if a file is a valid image
+ * @param file - The file to validate
+ * @returns boolean - Whether the file is a valid image
+ */
+export function validateImageFile(file: File): boolean {
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  
+  if (!validTypes.includes(file.type)) {
+    return false;
+  }
+  
+  if (file.size > maxSize) {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Generates a relevant image URL based on food keywords (fallback)
  * @param prompt - The text prompt containing food keywords
  * @returns The URL of a relevant food image
  */

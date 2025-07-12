@@ -11,11 +11,13 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, Plus, Minus, Loader2 } from 'lucide-react';
+import { Trash2, Plus, Minus, Loader2, Zap, Beef } from 'lucide-react';
 import Image from 'next/image';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Order } from '@/lib/types';
+import { recordSale } from '@/lib/sales-prediction';
+import { calculateTotalNutrition } from '@/lib/gemini';
 
 
 declare global {
@@ -36,6 +38,7 @@ export function Cart({ children }: { children: React.ReactNode }) {
   const [customerName, setCustomerName] = useState('');
 
   const total = state.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const totalNutrition = calculateTotalNutrition(state.items);
 
   const handleCheckout = () => {
     if (state.items.length === 0) {
@@ -109,16 +112,35 @@ export function Cart({ children }: { children: React.ReactNode }) {
         handler: async function (response: any) {
             const orderId = await createOrderInFirestore(response.razorpay_payment_id);
             
-            if (orderId) {
-              dispatch({ type: 'CLEAR_CART' });
-              toast({
-                  title: "Order Placed!",
-                  description: `Your order #${orderId.slice(0,6).toUpperCase()} has been received.`,
-              });
-              setIsCheckingOut(false);
-              setOpen(false);
-              router.push(`/order/${orderId}`);
-            }
+                    if (orderId) {
+          // Record sales data for prediction
+          try {
+            const orderWithId = {
+              id: orderId,
+              items: state.items,
+              total,
+              status: 'Received',
+              deliveryType,
+              benchNumber: deliveryType === 'delivery' ? benchNumber : '',
+              customerName,
+              paymentId: response.razorpay_payment_id,
+              createdAt: new Date(),
+            } as unknown as Order;
+            await recordSale(orderWithId);
+          } catch (error) {
+            console.error('Error recording sales data:', error);
+            // Don't show error to user, sales recording is not critical
+          }
+          
+          dispatch({ type: 'CLEAR_CART' });
+          toast({
+              title: "Order Placed!",
+              description: `Your order #${orderId.slice(0,6).toUpperCase()} has been received.`,
+          });
+          setIsCheckingOut(false);
+          setOpen(false);
+          router.push(`/order/${orderId}`);
+        }
         },
         prefill: {
             name: customerName,
@@ -179,9 +201,23 @@ export function Cart({ children }: { children: React.ReactNode }) {
             {state.items.length > 0 && (
               <SheetFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
                 <Separator />
-                <div className="flex justify-between items-center font-bold text-lg">
-                  <span>Total</span>
-                  <span>Rs. {total.toFixed(2)}</span>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center font-bold text-lg">
+                    <span>Total</span>
+                    <span>Rs. {total.toFixed(2)}</span>
+                  </div>
+                  <div className="bg-muted/50 p-3 rounded-md">
+                    <div className="flex justify-between items-center text-sm">
+                      <div className="flex items-center gap-1">
+                        <Zap className="h-4 w-4 text-yellow-600" />
+                        <span className="font-medium">Calories: {totalNutrition.calories || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Beef className="h-4 w-4 text-red-600" />
+                        <span className="font-medium">Protein: {totalNutrition.protein || 0}g</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <Button onClick={handleCheckout} className="w-full">Checkout</Button>
               </SheetFooter>
