@@ -94,7 +94,8 @@ export function Cart({ children }: { children: React.ReactNode }) {
             contact: '9876543210',
             email: 'dummy@example.com',
             vpa: 'success@razorpay' // Prefilled UPI ID for test mode
-        },
+ ,
+ card: true        },
         theme: {
             color: '#F5A623'
         }

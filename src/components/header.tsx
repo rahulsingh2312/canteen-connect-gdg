@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { UtensilsCrossed, ShoppingBasket, TicketPercent, LayoutGrid } from "lucide-react";
+import { UtensilsCrossed, ShoppingBasket } from "lucide-react";
 import { Button } from "./ui/button";
 import { Cart } from "./cart";
 import { useCart } from "@/hooks/use-cart";
 import { Badge } from "./ui/badge";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Header() {
     const { state } = useCart();
@@ -33,6 +34,7 @@ export function Header() {
                              <span className="sr-only">Open Cart</span>
                         </Button>
                     </Cart>
+                    <ThemeToggle />
                 </div>
             </div>
         </header>
