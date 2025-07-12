@@ -3,6 +3,7 @@ import './globals.css';
 import { Header } from '@/components/header';
 import { Toaster } from '@/components/ui/toaster';
 import { CartProvider } from '@/hooks/use-cart';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'CanteenConnect',
@@ -29,6 +30,7 @@ export default function RootLayout({
           </div>
           <Toaster />
         </CartProvider>
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       </body>
     </html>
   );

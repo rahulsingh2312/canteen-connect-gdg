@@ -14,6 +14,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Trash2, Plus, Minus } from 'lucide-react';
 import Image from 'next/image';
 
+declare global {
+    interface Window {
+      Razorpay: any;
+    }
+}
+
 export function Cart({ children }: { children: React.ReactNode }) {
   const { state, dispatch } = useCart();
   const { toast } = useToast();
@@ -22,6 +28,7 @@ export function Cart({ children }: { children: React.ReactNode }) {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery'>('pickup');
   const [benchNumber, setBenchNumber] = useState('');
+  const [customerName, setCustomerName] = useState('');
 
   const total = state.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
@@ -38,6 +45,14 @@ export function Cart({ children }: { children: React.ReactNode }) {
   };
 
   const handlePlaceOrder = () => {
+    if (!customerName.trim()) {
+        toast({
+            title: "Name is required",
+            description: "Please enter your name.",
+            variant: "destructive",
+        });
+        return;
+    }
     if (deliveryType === 'delivery' && !benchNumber.trim()) {
         toast({
             title: "Bench number required",
@@ -47,24 +62,43 @@ export function Cart({ children }: { children: React.ReactNode }) {
         return;
     }
     
-    // Simulate placing order
-    const orderId = `CC-${Math.floor(Math.random() * 900) + 100}`;
-    console.log("Order placed:", {
-        orderId,
-        items: state.items,
-        total,
-        deliveryType,
-        benchNumber,
-    });
+    const options = {
+        key: 'rzp_test_1DPvRWap8KrrzS', // Use your test key
+        amount: total * 100, // Amount in the smallest currency unit (e.g., paise for INR)
+        currency: 'INR',
+        name: 'CanteenConnect',
+        description: 'Food Order Payment',
+        handler: function (response: any) {
+            const orderId = `CC-${Math.floor(Math.random() * 900) + 100}`;
+            console.log("Order placed:", {
+                orderId,
+                paymentId: response.razorpay_payment_id,
+                items: state.items,
+                total,
+                deliveryType,
+                benchNumber,
+                customerName,
+            });
 
-    dispatch({ type: 'CLEAR_CART' });
-    toast({
-        title: "Order Placed!",
-        description: `Your order #${orderId} has been received.`,
-    });
-    setIsCheckingOut(false);
-    setOpen(false);
-    router.push(`/order/${orderId}`);
+            dispatch({ type: 'CLEAR_CART' });
+            toast({
+                title: "Order Placed!",
+                description: `Your order #${orderId} has been received.`,
+            });
+            setIsCheckingOut(false);
+            setOpen(false);
+            router.push(`/order/${orderId}`);
+        },
+        prefill: {
+            name: customerName,
+        },
+        theme: {
+            color: '#F5A623'
+        }
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
   };
 
   const handleSheetOpenChange = (isOpen: boolean) => {
@@ -122,8 +156,17 @@ export function Cart({ children }: { children: React.ReactNode }) {
         ) : (
           <div className="flex-grow flex flex-col justify-between">
             <div className="space-y-6 py-4">
-              <RadioGroup defaultValue="pickup" onValueChange={(value: 'pickup' | 'delivery') => setDeliveryType(value)}>
-                <Label className="font-semibold text-lg">Delivery Option</Label>
+               <div className="space-y-2">
+                  <Label htmlFor="customerName">Your Name</Label>
+                  <Input 
+                    id="customerName" 
+                    placeholder="e.g., Jane Doe" 
+                    value={customerName} 
+                    onChange={(e) => setCustomerName(e.target.value)}
+                  />
+                </div>
+              <RadioGroup defaultValue="pickup" value={deliveryType} onValueChange={(value: 'pickup' | 'delivery') => setDeliveryType(value)}>
+                <Label className="font-semibold text-base">Delivery Option</Label>
                 <div className="flex items-center space-x-2 mt-2">
                   <RadioGroupItem value="pickup" id="pickup" />
                   <Label htmlFor="pickup">Pickup</Label>
@@ -152,7 +195,7 @@ export function Cart({ children }: { children: React.ReactNode }) {
                   <span>Total</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
-              <Button onClick={handlePlaceOrder} className="w-full">Place Order</Button>
+              <Button onClick={handlePlaceOrder} className="w-full">Pay with Razorpay</Button>
               <Button variant="outline" onClick={() => setIsCheckingOut(false)} className="w-full">Back to Cart</Button>
             </SheetFooter>
           </div>
