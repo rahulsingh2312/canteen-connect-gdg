@@ -34,6 +34,10 @@ export function MenuItemCard({ item }: MenuItemCardProps) {
                     height={400}
                     className="object-cover w-full aspect-[3/2]"
                     data-ai-hint={item.dataAiHint}
+                    onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://placehold.co/600x400.png?text=Image+Not+Available';
+                    }}
                 />
                 {item.isOnSale && item.originalPrice && (
                     <Badge variant="destructive" className="absolute top-2 right-2">SALE</Badge>
@@ -46,9 +50,9 @@ export function MenuItemCard({ item }: MenuItemCardProps) {
             <CardFooter className="flex justify-between items-center p-4 pt-0">
                 <div className="font-bold text-lg text-primary">
                     {item.isOnSale && item.originalPrice && (
-                         <span className="text-muted-foreground line-through text-sm mr-2">₹{item.originalPrice.toFixed(2)}</span>
+                         <span className="text-muted-foreground line-through text-sm mr-2">Rs. {item.originalPrice.toFixed(2)}</span>
                     )}
-                    <span>₹{item.price.toFixed(2)}</span>
+                    <span>Rs. {item.price.toFixed(2)}</span>
                 </div>
                 <Button onClick={handleAddToCart} className="transition-transform active:scale-95">
                     Add to Cart

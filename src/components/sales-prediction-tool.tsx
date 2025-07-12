@@ -139,7 +139,7 @@ export function SalesPredictionTool() {
             </Button>
              <Button variant="outline" size="sm" onClick={fetchInitialData} disabled={isDataLoading}>
                 <Database className="mr-2 h-4 w-4"/>
-                {isDataLoading ? 'Loading Data...' : 'Reload Data from DB'}
+                {isDataLoading ? 'Loading Data...' : 'Reload'}
             </Button>
         </div>
 
@@ -150,8 +150,8 @@ export function SalesPredictionTool() {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Product</TableHead>
-                        <TableHead className="text-right flex items-center gap-2 justify-end"><BarChart className="h-4 w-4"/> Predicted Sales</TableHead>
-                        <TableHead className="text-right flex items-center gap-2 justify-end"><ChefHat className="h-4 w-4"/> Suggested to Cook</TableHead>
+                        {/* <TableHead className="text-right flex items-center gap-2 justify-end"><BarChart className="h-4 w-4"/> Predicted Sales</TableHead> */}
+                        <TableHead className="text-right flex items-center gap-2 justify-end"><ChefHat className="h-4 w-4"/>Predicted Sales</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
 import { demoMenuItems, demoInventoryItems } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -38,14 +38,14 @@ export function DatabaseSeeder() {
       // Seed Menu Items
       const menuItemsCollection = collection(db, 'menuItems');
       demoMenuItems.forEach((item) => {
-        const docRef = collection(menuItemsCollection).doc();
+        const docRef = doc(menuItemsCollection);
         batch.set(docRef, item);
       });
 
       // Seed Inventory Items
       const inventoryCollection = collection(db, 'inventory');
       demoInventoryItems.forEach((item) => {
-        const docRef = collection(inventoryCollection).doc();
+        const docRef = doc(inventoryCollection);
         batch.set(docRef, item);
       });
 

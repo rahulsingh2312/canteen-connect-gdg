@@ -17,24 +17,28 @@ export function DashboardOrders() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Note: The original query required a composite index.
-    // orderBy("status"), orderBy("createdAt", "desc")
-    // This has been simplified to avoid the error. For optimal sorting, create the index in Firebase.
+    // Simplified query to avoid composite index requirement
     const q = query(
       collection(db, "orders"),
-      where("status", "!=", "Delivered"),
       orderBy("createdAt", "desc")
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const currentOrders: Order[] = [];
       querySnapshot.forEach((doc) => {
-        currentOrders.push({ id: doc.id, ...doc.data() } as Order);
+        const order = { id: doc.id, ...doc.data() } as Order;
+        // Filter out delivered orders on the client side
+        if (order.status !== 'Delivered') {
+          currentOrders.push(order);
+        }
       });
-      // The sorting by status is now done on the client-side
+      // Sort by status priority, then by creation date
       currentOrders.sort((a, b) => {
         const statusOrder = ['Received', 'Preparing', 'Ready for Pickup', 'Out for Delivery'];
-        return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+        const statusDiff = statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
+        if (statusDiff !== 0) return statusDiff;
+        // If same status, sort by creation date (newest first)
+        return b.createdAt.toMillis() - a.createdAt.toMillis();
       });
       setOrders(currentOrders);
       setIsLoading(false);
@@ -112,7 +116,7 @@ export function DashboardOrders() {
                           </ul>
                       </div>
                       <div className="text-right">
-                          <p className="font-semibold text-lg">₹{order.total.toFixed(2)}</p>
+                          <p className="font-semibold text-lg">Rs. {order.total.toFixed(2)}</p>
                           {order.deliveryType === 'delivery' && order.benchNumber ? (
                               <Badge className="mt-2 bg-primary/20 text-primary hover:bg-primary/30">
                                   <Armchair className="mr-2 h-4 w-4"/>
