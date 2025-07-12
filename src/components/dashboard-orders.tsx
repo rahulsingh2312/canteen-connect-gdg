@@ -17,10 +17,12 @@ export function DashboardOrders() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Note: The original query required a composite index.
+    // orderBy("status"), orderBy("createdAt", "desc")
+    // This has been simplified to avoid the error. For optimal sorting, create the index in Firebase.
     const q = query(
       collection(db, "orders"),
       where("status", "!=", "Delivered"),
-      orderBy("status"),
       orderBy("createdAt", "desc")
     );
 
@@ -28,6 +30,11 @@ export function DashboardOrders() {
       const currentOrders: Order[] = [];
       querySnapshot.forEach((doc) => {
         currentOrders.push({ id: doc.id, ...doc.data() } as Order);
+      });
+      // The sorting by status is now done on the client-side
+      currentOrders.sort((a, b) => {
+        const statusOrder = ['Received', 'Preparing', 'Ready for Pickup', 'Out for Delivery'];
+        return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
       });
       setOrders(currentOrders);
       setIsLoading(false);
