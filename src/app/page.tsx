@@ -14,14 +14,19 @@ export default function Home() {
   useEffect(() => {
     const fetchMenuItems = async () => {
       setIsLoading(true);
-      const q = query(collection(db, "menuItems"), where("isPaused", "==", false));
-      const querySnapshot = await getDocs(q);
-      const items: MenuItem[] = [];
-      querySnapshot.forEach((doc) => {
-        items.push({ id: doc.id, ...doc.data() } as MenuItem);
-      });
-      setMenuItems(items);
-      setIsLoading(false);
+      try {
+        const q = query(collection(db, "menuItems"), where("isPaused", "==", false));
+        const querySnapshot = await getDocs(q);
+        const items: MenuItem[] = [];
+        querySnapshot.forEach((doc) => {
+          items.push({ id: doc.id, ...doc.data() } as MenuItem);
+        });
+        setMenuItems(items);
+      } catch (error) {
+        console.error("Firebase error, using fallback data:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchMenuItems();

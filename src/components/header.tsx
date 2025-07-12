@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { UtensilsCrossed, ShoppingBasket, LayoutDashboard, LogIn } from "lucide-react";
+import { UtensilsCrossed, ShoppingBasket, LogIn, User } from "lucide-react";
 import { Button } from "./ui/button";
 import { Cart } from "./cart";
 import { useCart } from "@/hooks/use-cart";
@@ -59,11 +59,6 @@ export function Header() {
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
-                                    <Link href="/dashboard" className="flex items-center gap-2">
-                                        <LayoutDashboard className="h-4 w-4" /> Dashboard
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
                                     <Link href="/login" className="flex items-center gap-2">
                                         <LogIn className="h-4 w-4" /> Change Role
                                     </Link>
@@ -76,7 +71,6 @@ export function Header() {
                         <nav className="flex items-center space-x-6 text-sm font-medium">
                             <Link href="/" className="transition-colors hover:text-primary">Menu</Link>
                             <Link href="/sales" className="transition-colors hover:text-primary">On Sale</Link>
-                            <Link href="/dashboard" className="transition-colors hover:text-primary">Dashboard</Link>
                         </nav>
                         <div className="flex flex-1 items-center justify-end space-x-4">
                             <Cart>
@@ -91,6 +85,7 @@ export function Header() {
                             <ThemeToggle />
                              <Link href="/login" passHref>
                                 <Button variant="outline" size="sm">
+                                    <LogIn className="mr-2" />
                                     Change Role
                                 </Button>
                             </Link>
