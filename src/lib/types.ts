@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface MenuItem {
   id: string; // Changed to string for Firestore document ID
   name: string;
@@ -23,10 +25,12 @@ export type Order = {
   deliveryType: 'pickup' | 'delivery';
   benchNumber?: string;
   customerName: string;
+  paymentId: string;
+  createdAt: Timestamp;
 };
 
 export type InventoryItem = {
-    id: number;
+    id: string;
     name: string;
     stock: number;
     lowStockThreshold: number;

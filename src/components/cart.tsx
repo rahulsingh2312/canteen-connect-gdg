@@ -11,8 +11,12 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, Plus, Minus } from 'lucide-react';
+import { Trash2, Plus, Minus, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { Order } from '@/lib/types';
+
 
 declare global {
     interface Window {
@@ -26,6 +30,7 @@ export function Cart({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery'>('pickup');
   const [benchNumber, setBenchNumber] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -43,6 +48,39 @@ export function Cart({ children }: { children: React.ReactNode }) {
     }
     setIsCheckingOut(true);
   };
+
+  const createOrderInFirestore = async (paymentId: string) => {
+    setIsPlacingOrder(true);
+    try {
+      const orderData: Omit<Order, 'id' | 'createdAt'> = {
+        items: state.items,
+        total,
+        status: 'Received',
+        deliveryType,
+        benchNumber: deliveryType === 'delivery' ? benchNumber : '',
+        customerName,
+        paymentId,
+      };
+
+      const docRef = await addDoc(collection(db, 'orders'), {
+        ...orderData,
+        createdAt: serverTimestamp(),
+      });
+      
+      return docRef.id;
+
+    } catch (error) {
+      console.error("Error creating order: ", error);
+      toast({
+        title: "Order Failed",
+        description: "Could not save your order. Please contact staff.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+        setIsPlacingOrder(false);
+    }
+  }
 
   const handlePlaceOrder = () => {
     if (!customerName.trim()) {
@@ -68,34 +106,26 @@ export function Cart({ children }: { children: React.ReactNode }) {
         currency: 'INR',
         name: 'CanteenConnect',
         description: 'Food Order Payment',
-        handler: function (response: any) {
-            const orderId = `CC-${Math.floor(Math.random() * 900) + 100}`;
-            console.log("Order placed:", {
-                orderId,
-                paymentId: response.razorpay_payment_id,
-                items: state.items,
-                total,
-                deliveryType,
-                benchNumber,
-                customerName,
-            });
-
-            dispatch({ type: 'CLEAR_CART' });
-            toast({
-                title: "Order Placed!",
-                description: `Your order #${orderId} has been received.`,
-            });
-            setIsCheckingOut(false);
-            setOpen(false);
-            router.push(`/order/${orderId}`);
+        handler: async function (response: any) {
+            const orderId = await createOrderInFirestore(response.razorpay_payment_id);
+            
+            if (orderId) {
+              dispatch({ type: 'CLEAR_CART' });
+              toast({
+                  title: "Order Placed!",
+                  description: `Your order #${orderId.slice(0,6).toUpperCase()} has been received.`,
+              });
+              setIsCheckingOut(false);
+              setOpen(false);
+              router.push(`/order/${orderId}`);
+            }
         },
         prefill: {
             name: customerName,
             contact: '9876543210',
             email: 'dummy@example.com',
-            vpa: 'success@razorpay' // Prefilled UPI ID for test mode
- ,
- card: true        },
+            vpa: 'success@razorpay'
+        },
         theme: {
             color: '#F5A623'
         }
@@ -153,7 +183,7 @@ export function Cart({ children }: { children: React.ReactNode }) {
                   <span>Total</span>
                   <span>₹{total.toFixed(2)}</span>
                 </div>
-                <Button onClick={handleCheckout} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">Checkout</Button>
+                <Button onClick={handleCheckout} className="w-full">Checkout</Button>
               </SheetFooter>
             )}
           </>
@@ -199,7 +229,9 @@ export function Cart({ children }: { children: React.ReactNode }) {
                   <span>Total</span>
                   <span>₹{total.toFixed(2)}</span>
                 </div>
-              <Button onClick={handlePlaceOrder} className="w-full">Pay with Razorpay</Button>
+              <Button onClick={handlePlaceOrder} disabled={isPlacingOrder} className="w-full">
+                {isPlacingOrder ? <Loader2 className="animate-spin" /> : 'Pay with Razorpay'}
+              </Button>
               <Button variant="outline" onClick={() => setIsCheckingOut(false)} className="w-full">Back to Cart</Button>
             </SheetFooter>
           </div>
