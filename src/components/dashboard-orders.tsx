@@ -64,7 +64,7 @@ export function DashboardOrders() {
                         </ul>
                     </div>
                     <div className="text-right">
-                         <p className="font-semibold text-lg">${order.total.toFixed(2)}</p>
+                         <p className="font-semibold text-lg">₹{order.total.toFixed(2)}</p>
                         {order.deliveryType === 'delivery' && order.benchNumber ? (
                             <Badge className="mt-2 bg-primary/20 text-primary hover:bg-primary/30">
                                 <Armchair className="mr-2 h-4 w-4"/>

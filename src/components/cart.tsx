@@ -63,7 +63,7 @@ export function Cart({ children }: { children: React.ReactNode }) {
     }
     
     const options = {
-        key: 'rzp_test_1DPvRWap8KrrzS', // Use your test key
+        key: 'rzp_test_zzs78tyLJEYw9Z', // Use your test key
         amount: total * 100, // Amount in the smallest currency unit (e.g., paise for INR)
         currency: 'INR',
         name: 'CanteenConnect',
@@ -91,6 +91,9 @@ export function Cart({ children }: { children: React.ReactNode }) {
         },
         prefill: {
             name: customerName,
+            contact: '9876543210',
+            email: 'dummy@example.com',
+            vpa: 'success@razorpay' // Prefilled UPI ID for test mode
         },
         theme: {
             color: '#F5A623'
@@ -125,7 +128,7 @@ export function Cart({ children }: { children: React.ReactNode }) {
                       <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md" data-ai-hint={item.dataAiHint} />
                       <div className="flex-grow">
                         <p className="font-semibold">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">${item.price.toFixed(2)}</p>
+                        <p className="text-sm text-muted-foreground">₹{item.price.toFixed(2)}</p>
                          <div className="flex items-center gap-2 mt-1">
                             <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => dispatch({ type: 'UPDATE_QUANTITY', payload: { id: item.id, quantity: item.quantity - 1 }})}><Minus className="h-4 w-4" /></Button>
                             <span>{item.quantity}</span>
@@ -147,7 +150,7 @@ export function Cart({ children }: { children: React.ReactNode }) {
                 <Separator />
                 <div className="flex justify-between items-center font-bold text-lg">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>₹{total.toFixed(2)}</span>
                 </div>
                 <Button onClick={handleCheckout} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">Checkout</Button>
               </SheetFooter>
@@ -193,7 +196,7 @@ export function Cart({ children }: { children: React.ReactNode }) {
               <Separator />
                 <div className="flex justify-between items-center font-bold text-lg">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>₹{total.toFixed(2)}</span>
                 </div>
               <Button onClick={handlePlaceOrder} className="w-full">Pay with Razorpay</Button>
               <Button variant="outline" onClick={() => setIsCheckingOut(false)} className="w-full">Back to Cart</Button>
