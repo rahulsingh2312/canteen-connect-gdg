@@ -1,5 +1,5 @@
 export interface MenuItem {
-  id: number;
+  id: string; // Changed to string for Firestore document ID
   name: string;
   description: string;
   price: number;
@@ -8,6 +8,7 @@ export interface MenuItem {
   category: string;
   isOnSale: boolean;
   dataAiHint: string;
+  isPaused: boolean;
 }
 
 export interface CartItem extends MenuItem {

@@ -1,89 +1,9 @@
-import type { MenuItem, Order, InventoryItem } from './types';
+import type { Order, InventoryItem } from './types';
+import type { MenuItem } from './types'; // Import MenuItem separately to avoid circular dependency issues
 
-export const menuItems: MenuItem[] = [
-  {
-    id: 1,
-    name: 'Chole Bhature',
-    description: 'Spicy chickpeas with fried bread.',
-    price: 150,
-    image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'chole bhature',
-    category: 'Main Course',
-    isOnSale: false,
-  },
-  {
-    id: 2,
-    name: 'Masala Dosa',
-    description: 'Crispy rice pancake with potato filling.',
-    price: 120,
-    image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'masala dosa',
-    category: 'Main Course',
-    isOnSale: false,
-  },
-  {
-    id: 3,
-    name: 'Samosa Chaat',
-    description: 'Samosa topped with yogurt, chutney, and spices.',
-    price: 80,
-    image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'samosa chaat',
-    category: 'Snacks',
-    isOnSale: false,
-  },
-  {
-    id: 4,
-    name: 'Paneer Tikka',
-    description: 'Marinated cottage cheese cubes grilled to perfection.',
-    price: 220,
-    image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'paneer tikka',
-    category: 'Appetizers',
-    isOnSale: false,
-  },
-  {
-    id: 5,
-    name: 'Vada Pav',
-    description: 'A classic Mumbai street food spicy potato fritter in a bun.',
-    price: 60,
-    image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'vada pav',
-    category: 'Snacks',
-    isOnSale: true,
-    originalPrice: 60,
-  },
-  {
-    id: 6,
-    name: 'Masala Chai',
-    description: 'Aromatic spiced tea with milk.',
-    price: 40,
-    image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'masala chai',
-    category: 'Drinks',
-    isOnSale: false,
-  },
-  {
-    id: 7,
-    name: 'Gulab Jamun',
-    description: 'Soft, spongy balls soaked in sweet syrup.',
-    price: 90,
-    image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'gulab jamun',
-    category: 'Desserts',
-    isOnSale: true,
-    originalPrice: 90,
-  },
-  {
-    id: 8,
-    name: 'Lassi',
-    description: 'A refreshing yogurt-based drink, sweet or salted.',
-    price: 70,
-    image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'lassi drink',
-    category: 'Drinks',
-    isOnSale: false,
-  },
-];
+// The menuItems data is now fetched from Firebase in the respective page components.
+// This array is left empty intentionally. You can manage menu items from the dashboard.
+export const menuItems: MenuItem[] = [];
 
 export const inventory: InventoryItem[] = [
     { id: 1, name: 'Chickpeas', stock: 50, lowStockThreshold: 20 },
@@ -108,13 +28,11 @@ export const historicalSalesData = [
     { date: '2023-10-25', productName: 'Samosa Chaat', quantity: 10 },
 ];
 
+// Dummy data for current orders until it's also moved to Firebase
 export const currentOrders: Order[] = [
     {
         id: 'CC-101',
-        items: [
-            { ...menuItems[0], quantity: 1 },
-            { ...menuItems[5], quantity: 1 }
-        ],
+        items: [],
         total: 190,
         status: 'Preparing',
         deliveryType: 'pickup',
@@ -122,7 +40,7 @@ export const currentOrders: Order[] = [
     },
     {
         id: 'CC-102',
-        items: [{ ...menuItems[1], quantity: 2 }],
+        items: [],
         total: 240,
         status: 'Received',
         deliveryType: 'delivery',
@@ -131,13 +49,51 @@ export const currentOrders: Order[] = [
     },
     {
         id: 'CC-103',
-        items: [
-            { ...menuItems[2], quantity: 1 },
-            { ...menuItems[3], quantity: 1 }
-        ],
+        items: [],
         total: 300,
         status: 'Ready for Pickup',
         deliveryType: 'pickup',
         customerName: 'Rohan'
     }
+];
+
+// Function to get a menu item by ID, to help bridge the gap for currentOrders
+const tempMenuItemsForOrders: any[] = [
+  {
+    id: 1,
+    name: 'Chole Bhature',
+    price: 150,
+  },
+  {
+    id: 6,
+    name: 'Masala Chai',
+    price: 40,
+  },
+  {
+    id: 2,
+    name: 'Masala Dosa',
+    price: 120,
+  },
+    {
+    id: 3,
+    name: 'Samosa Chaat',
+    price: 80,
+  },
+    {
+    id: 4,
+    name: 'Paneer Tikka',
+    price: 220,
+  },
+];
+
+const getItem = (id: number) => tempMenuItemsForOrders.find(i => i.id === id);
+
+currentOrders[0].items = [
+    { ...getItem(1), quantity: 1 },
+    { ...getItem(6), quantity: 1 }
+];
+currentOrders[1].items = [{ ...getItem(2), quantity: 2 }];
+currentOrders[2].items = [
+    { ...getItem(3), quantity: 1 },
+    { ...getItem(4), quantity: 1 }
 ];

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
@@ -9,8 +10,8 @@ type CartState = {
 
 type CartAction =
   | { type: 'ADD_ITEM'; payload: MenuItem }
-  | { type: 'REMOVE_ITEM'; payload: number }
-  | { type: 'UPDATE_QUANTITY'; payload: { id: number; quantity: number } }
+  | { type: 'REMOVE_ITEM'; payload: string } // Changed to string for Firestore ID
+  | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } } // Changed to string
   | { type: 'CLEAR_CART' };
 
 const CartContext = createContext<{
